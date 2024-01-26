@@ -46,6 +46,7 @@ add_executable(fakemote
     source/usb_hid.c
     source/usb_drivers/sony_ds3.c
     source/usb_drivers/sony_ds4.c
+    source/usb_drivers/mayflash_gc.c
 )
 
 target_include_directories(fakemote PRIVATE

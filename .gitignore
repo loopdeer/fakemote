@@ -62,3 +62,5 @@ dkms.conf
 
 # CMake
 !CMakeLists.txt
+
+build
