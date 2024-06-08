@@ -7,7 +7,7 @@ typedef struct fake_wiimote_t fake_wiimote_t;
 typedef struct input_device_t input_device_t;
 
 typedef struct input_device_ops_t {
-	int (*resume)(void *usrdata, fake_wiimote_t *wiimote);
+	int (*resume)(void *usrdata, fake_wiimote_t* wiimotes[]);
 	int (*suspend)(void *usrdata);
 	int (*set_leds)(void *usrdata, int leds);
 	int (*set_rumble)(void *usrdata, bool rumble_on);

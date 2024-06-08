@@ -43,8 +43,6 @@ OBJS	= source/start.o		\
 	  source/wiimote_crypto.o	\
 	  source/conf.o			\
 	  source/usb_hid.o		\
-	  source/usb_drivers/sony_ds3.o	\
-	  source/usb_drivers/sony_ds4.o	\
 	  source/usb_drivers/mayflash_gc.o
 
 

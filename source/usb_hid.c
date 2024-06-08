@@ -52,8 +52,6 @@ struct usb_hid_v5_transfer {
 static_assert(sizeof(struct usb_hid_v5_transfer) == 64);
 
 static const usb_device_driver_t *usb_device_drivers[] = {
-	&ds3_usb_device_driver,
-	&ds4_usb_device_driver,
 	&mayflash_gc_usb_device_driver
 };
 
@@ -262,7 +260,7 @@ int usb_device_driver_issue_intr_transfer_async(usb_input_device_t *device, int 
 					      queue_id, &device->usb_async_resp_msg);
 }
 
-static int usb_device_ops_resume(void *usrdata, fake_wiimote_t *wiimote)
+static int usb_device_ops_resume(void *usrdata, fake_wiimote_t* wiimotes[])
 {
 	usb_input_device_t *device = usrdata;
 
@@ -279,7 +277,7 @@ static int usb_device_ops_resume(void *usrdata, fake_wiimote_t *wiimote)
 	}
 
 	/* Store assigned fake Wiimote */
-	device->wiimote = wiimote;
+	*device->wiimotes = wiimotes;
 
 	if (device->driver->init)
 		return device->driver->init(device, device->vid, device->pid);
@@ -441,12 +439,16 @@ static void handle_device_change_reply(int host_fd, areply *reply)
 
 		/* We have ownership, populate the device info */
 		device->vid = vid;
+		device->num_wiimotes = 1;
 		device->pid = pid;
 		device->host_fd = host_fd;
 		device->dev_id = dev_id;
 		device->driver = driver;
 		/* We will get a fake Wiimote assigneed at the init() callback */
-		device->wiimote = NULL;
+		for (int i = 0; i < MAX_FAKE_WIIMOTES; i++)
+		{
+			device->wiimotes[i] = NULL;
+		}
 		device->suspended = false;
 		device->valid = true;
 

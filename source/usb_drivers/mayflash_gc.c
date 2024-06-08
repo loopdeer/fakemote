@@ -230,7 +230,7 @@ int gc_driver_ops_init(usb_input_device_t *device, u16 vid, u16 pid)
 	priv->switch_mapping = false;
 
 	/* Set initial extension */
-	fake_wiimote_set_extension(device->wiimote, input_mappings[priv->mapping].extension);
+	fake_wiimote_set_extension(device->wiimotes[0], input_mappings[priv->mapping].extension);
 
 	return gc_request_data(device);
 }
@@ -271,7 +271,7 @@ bool gc_report_input(usb_input_device_t *device)
 
 	if (bm_check_switch_mapping(priv->input.buttons, &priv->switch_mapping, SWITCH_MAPPING_COMBO)) {
 		priv->mapping = (priv->mapping + 1) % ARRAY_SIZE(input_mappings);
-		fake_wiimote_set_extension(device->wiimote, input_mappings[priv->mapping].extension);
+		fake_wiimote_set_extension(device->wiimotes[0], input_mappings[priv->mapping].extension);
 		return false;
 	}
 
@@ -283,10 +283,10 @@ bool gc_report_input(usb_input_device_t *device)
 	acc_y = 0;
 	acc_z = 0;
 
-	fake_wiimote_report_accelerometer(device->wiimote, acc_x, acc_y, acc_z);
+	fake_wiimote_report_accelerometer(device->wiimotes[0], acc_x, acc_y, acc_z);
 
 	if (input_mappings[priv->mapping].extension == WIIMOTE_EXT_NONE) {
-		fake_wiimote_report_input(device->wiimote, wiimote_buttons);
+		fake_wiimote_report_input(device->wiimotes[0], wiimote_buttons);
 	} else if (input_mappings[priv->mapping].extension == WIIMOTE_EXT_NUNCHUK) {
 		bm_map_nunchuk(GC_BUTTON__NUM, priv->input.buttons,
 			       GC_ANALOG_AXIS__NUM, priv->input.analog_axis,
@@ -294,7 +294,7 @@ bool gc_report_input(usb_input_device_t *device)
 			       input_mappings[priv->mapping].nunchuk_button_map,
 			       input_mappings[priv->mapping].nunchuk_analog_axis_map,
 			       &extension_data.nunchuk);
-		fake_wiimote_report_input_ext(device->wiimote, wiimote_buttons,
+		fake_wiimote_report_input_ext(device->wiimotes[0], wiimote_buttons,
 					      &extension_data, sizeof(extension_data.nunchuk));
 	} else if (input_mappings[priv->mapping].extension == WIIMOTE_EXT_CLASSIC) {
 		bm_map_classic(GC_BUTTON__NUM, priv->input.buttons,
@@ -302,7 +302,7 @@ bool gc_report_input(usb_input_device_t *device)
 			       input_mappings[priv->mapping].classic_button_map,
 			       input_mappings[priv->mapping].classic_analog_axis_map,
 			       &extension_data.classic);
-		fake_wiimote_report_input_ext(device->wiimote, wiimote_buttons,
+		fake_wiimote_report_input_ext(device->wiimotes[0], wiimote_buttons,
 					      &extension_data, sizeof(extension_data.classic));
 	}
 
