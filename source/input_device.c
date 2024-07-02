@@ -30,7 +30,7 @@ bool input_devices_add(void *usrdata, const input_device_ops_t *ops,
 	for (int i = 0; i < ARRAY_SIZE(input_devices); i++) {
 		if (!input_devices[i].valid) {
 			/* No assigned fake Wiimote yet */
-			input_devices[i].num_of_wiimotes = 1;
+			input_devices[i].num_of_wiimotes = 0;
 			null_wiimotes(&input_devices[i]);
 			input_devices[i].ops = ops;
 			input_devices[i].usrdata = usrdata;
@@ -84,7 +84,7 @@ input_device_t *input_device_get_unassigned(void)
 void input_device_assign_wiimote(input_device_t *input_device, fake_wiimote_t *wiimote)
 {
 	if (input_device->num_of_wiimotes < MAX_FAKE_WIIMOTES){
-		input_device->assigned_wiimotes[input_device->num_of_wiimotes - 1] = wiimote;
+		input_device->assigned_wiimotes[input_device->num_of_wiimotes] = wiimote;
 		input_device->num_of_wiimotes++;
 	}
 }

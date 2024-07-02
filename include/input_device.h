@@ -18,7 +18,7 @@ void input_devices_init(void);
 void input_devices_tick(void);
 
 /** Used by input devices **/
-
+void null_wiimotes(input_device_t *input_device);
 bool input_devices_add(void *usrdata, const input_device_ops_t *ops,
 		       input_device_t **assigned_input_device);
 void input_devices_remove(input_device_t *input_device);

@@ -260,7 +260,7 @@ int usb_device_driver_issue_intr_transfer_async(usb_input_device_t *device, int 
 					      queue_id, &device->usb_async_resp_msg);
 }
 
-static int usb_device_ops_resume(void *usrdata, fake_wiimote_t* wiimotes[])
+static int usb_device_ops_resume(void *usrdata, fake_wiimote_t *wiimotes[])
 {
 	usb_input_device_t *device = usrdata;
 
@@ -277,7 +277,7 @@ static int usb_device_ops_resume(void *usrdata, fake_wiimote_t* wiimotes[])
 	}
 
 	/* Store assigned fake Wiimote */
-	*device->wiimotes = wiimotes;
+	*device->wiimotes = *wiimotes;
 
 	if (device->driver->init)
 		return device->driver->init(device, device->vid, device->pid);
