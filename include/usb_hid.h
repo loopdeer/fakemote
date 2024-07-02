@@ -21,7 +21,7 @@ typedef struct {
 	/* Driver that handles this device */
 	const usb_device_driver_t *driver;
 	/* Assigned fake Wiimote */
-	fake_wiimote_t* wiimotes[MAX_FAKE_WIIMOTES];
+	fake_wiimote_t *wiimotes[MAX_FAKE_WIIMOTES];
 	u8 num_wiimotes;
 	/* Assigned input device */
 	input_device_t *input_device;
