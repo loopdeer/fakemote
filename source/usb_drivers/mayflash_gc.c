@@ -72,9 +72,9 @@ struct mayflash_gc_private_data_t {
 	struct {
 		u32 buttons;
 		u8 analog_axis[GC_ANALOG_AXIS__NUM];
-	} input;
-	u8 mapping;
-	bool switch_mapping;
+	} input[MAX_FAKE_WIIMOTES];
+	u8 mapping[MAX_FAKE_WIIMOTES];
+	bool switch_mapping[MAX_FAKE_WIIMOTES];
 };
 static_assert(sizeof(struct mayflash_gc_private_data_t) <= USB_INPUT_DEVICE_PRIVATE_DATA_SIZE);
 
@@ -226,11 +226,19 @@ int gc_driver_ops_init(usb_input_device_t *device, u16 vid, u16 pid)
 	struct mayflash_gc_private_data_t *priv = (void *)device->private_data;
 
 	/* Init private state */
-	priv->mapping = 1;
-	priv->switch_mapping = false;
+	for (int i = 0; i < MAX_FAKE_WIIMOTES; i++){
+		priv->mapping[i] = 1;
+		priv->switch_mapping[i] = false;
+	}
+	
 
 	/* Set initial extension */
-	fake_wiimote_set_extension(device->wiimotes[0], input_mappings[priv->mapping].extension);
+	for (int i = 0; i < MAX_FAKE_WIIMOTES; i++){
+		if (device->wiimotes[i]){
+			device->wiimotes[i]->active = true;
+			fake_wiimote_set_extension(device->wiimotes[i], input_mappings[priv->mapping[i]].extension);
+		}
+	}
 
 	return gc_request_data(device);
 }
@@ -268,42 +276,70 @@ bool gc_report_input(usb_input_device_t *device)
 	u16 wiimote_buttons = 0;
 	u16 acc_x, acc_y, acc_z;
 	union wiimote_extension_data_t extension_data;
-
-	if (bm_check_switch_mapping(priv->input.buttons, &priv->switch_mapping, SWITCH_MAPPING_COMBO)) {
-		priv->mapping = (priv->mapping + 1) % ARRAY_SIZE(input_mappings);
-		fake_wiimote_set_extension(device->wiimotes[0], input_mappings[priv->mapping].extension);
-		return false;
+	bool swapped = false;
+	// Check mapping combos
+	for (int i = 0; i < MAX_FAKE_WIIMOTES; i++){
+		if (bm_check_switch_mapping(priv->input[i].buttons, &priv->switch_mapping[i], SWITCH_MAPPING_COMBO)) {
+			priv->mapping[i] = (priv->mapping[i] + 1) % ARRAY_SIZE(input_mappings);
+			fake_wiimote_set_extension(device->wiimotes[i], input_mappings[priv->mapping[i]].extension);
+		}
 	}
 
-	bm_map_wiimote(GC_BUTTON__NUM, priv->input.buttons,
-	       input_mappings[priv->mapping].wiimote_button_map,
+	if (swapped)
+		return false;
+	
+
+	// Map buttons
+	for (int i = 0; i < MAX_FAKE_WIIMOTES; i++){
+		bm_map_wiimote(GC_BUTTON__NUM, priv->input[i].buttons,
+	       input_mappings[priv->mapping[i]].wiimote_button_map,
 	       &wiimote_buttons);
+	}
+	
 	// Accel is overrated
 	acc_x = 0;
 	acc_y = 0;
 	acc_z = 0;
 
-	fake_wiimote_report_accelerometer(device->wiimotes[0], acc_x, acc_y, acc_z);
+	// Report no Accelerometer for each "wiimote"
+	for (int i = 0; i < MAX_FAKE_WIIMOTES; i++){
+		if (device->wiimotes[i]){
+			fake_wiimote_report_accelerometer(device->wiimotes[i], acc_x, acc_y, acc_z);
+		}
+	}
 
-	if (input_mappings[priv->mapping].extension == WIIMOTE_EXT_NONE) {
-		fake_wiimote_report_input(device->wiimotes[0], wiimote_buttons);
-	} else if (input_mappings[priv->mapping].extension == WIIMOTE_EXT_NUNCHUK) {
-		bm_map_nunchuk(GC_BUTTON__NUM, priv->input.buttons,
-			       GC_ANALOG_AXIS__NUM, priv->input.analog_axis,
-			       0, 0, 0,
-			       input_mappings[priv->mapping].nunchuk_button_map,
-			       input_mappings[priv->mapping].nunchuk_analog_axis_map,
-			       &extension_data.nunchuk);
-		fake_wiimote_report_input_ext(device->wiimotes[0], wiimote_buttons,
-					      &extension_data, sizeof(extension_data.nunchuk));
-	} else if (input_mappings[priv->mapping].extension == WIIMOTE_EXT_CLASSIC) {
-		bm_map_classic(GC_BUTTON__NUM, priv->input.buttons,
-			       GC_ANALOG_AXIS__NUM, priv->input.analog_axis,
-			       input_mappings[priv->mapping].classic_button_map,
-			       input_mappings[priv->mapping].classic_analog_axis_map,
-			       &extension_data.classic);
-		fake_wiimote_report_input_ext(device->wiimotes[0], wiimote_buttons,
-					      &extension_data, sizeof(extension_data.classic));
+	// Report input for each wiimote using input mappings
+	for (int i = 0; i < MAX_FAKE_WIIMOTES; i++){
+		if (input_mappings[priv->mapping[i]].extension == WIIMOTE_EXT_NONE) {
+			if (device->wiimotes[i]){
+				fake_wiimote_report_input(device->wiimotes[i], wiimote_buttons);
+			}
+			
+			
+		} else if (input_mappings[priv->mapping[i]].extension == WIIMOTE_EXT_NUNCHUK) {
+			bm_map_nunchuk(GC_BUTTON__NUM, priv->input[i].buttons,
+					GC_ANALOG_AXIS__NUM, priv->input[i].analog_axis,
+					0, 0, 0,
+					input_mappings[priv->mapping[i]].nunchuk_button_map,
+					input_mappings[priv->mapping[i]].nunchuk_analog_axis_map,
+					&extension_data.nunchuk);
+			if (device->wiimotes[i]){
+				fake_wiimote_report_input_ext(device->wiimotes[i], wiimote_buttons, 
+							&extension_data, sizeof(extension_data.nunchuk));
+			}
+			
+			
+		} else if (input_mappings[priv->mapping[i]].extension == WIIMOTE_EXT_CLASSIC) {
+			bm_map_classic(GC_BUTTON__NUM, priv->input[i].buttons,
+					GC_ANALOG_AXIS__NUM, priv->input[i].analog_axis,
+					input_mappings[priv->mapping[i]].classic_button_map,
+					input_mappings[priv->mapping[i]].classic_analog_axis_map,
+					&extension_data.classic);
+			if (device->wiimotes[i]){
+				fake_wiimote_report_input_ext(device->wiimotes[i], wiimote_buttons,
+							&extension_data, sizeof(extension_data.classic));
+			}
+		}
 	}
 
 	return true;
@@ -316,8 +352,12 @@ int gc_driver_ops_usb_async_resp(usb_input_device_t *device)
 
 	//TODO: investigate other ports
 	if (report->port_num == 0x01) {
-		gc_get_buttons(report, &priv->input.buttons);
-		gc_get_analog_axis(report, priv->input.analog_axis);
+		gc_get_buttons(report, &priv->input[0].buttons);
+		gc_get_analog_axis(report, priv->input[0].analog_axis);
+	}
+	else if (report->port_num == 0x02) {
+		gc_get_buttons(report, &priv->input[1].buttons);
+		gc_get_analog_axis(report, priv->input[1].analog_axis);
 	}
 
 	return gc_request_data(device);

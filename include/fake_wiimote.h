@@ -34,6 +34,7 @@ typedef struct {
 } l2cap_channel_info_t;
 
 typedef struct fake_wiimote_t {
+	bool is_anchor;
 	bool active;
 	bdaddr_t bdaddr;
 	/* Bluetooth connection state */

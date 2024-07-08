@@ -10,7 +10,7 @@
 static struct input_device_t {
 	bool valid;
 	/* NULL if no assigned fake Wiimote */
-	fake_wiimote_t* assigned_wiimotes[MAX_FAKE_WIIMOTES];
+	fake_wiimote_t *assigned_wiimotes[MAX_FAKE_WIIMOTES];
 	u8 num_of_wiimotes;
 	const input_device_ops_t *ops;
 	void *usrdata;
@@ -72,7 +72,7 @@ input_device_t *input_device_get_unassigned(void)
 {
 	for (int i = 0; i < ARRAY_SIZE(input_devices); i++) {
 		if (input_devices[i].valid &&
-		    !input_devices[i].assigned_wiimotes[0] &&
+		    input_devices[i].num_of_wiimotes < MAX_FAKE_WIIMOTES &&
 		    input_devices[i].reconnect_delay == 0) {
 			return &input_devices[i];
 		}
@@ -91,6 +91,11 @@ void input_device_assign_wiimote(input_device_t *input_device, fake_wiimote_t *w
 
 void input_device_release_wiimote(input_device_t *input_device)
 {
+	for (int i = 0; i < MAX_FAKE_WIIMOTES; i++){
+		// If wiimote exists set to inactive before nulling.
+		if (input_device->assigned_wiimotes[i])
+			input_device->assigned_wiimotes[i]->active = false;
+	}
 	null_wiimotes(input_device);
 	
 	input_device->reconnect_delay = RECONNECT_DELAY;
@@ -123,6 +128,11 @@ int input_device_set_leds(input_device_t *input_device, int leds)
 int input_device_set_rumble(input_device_t *input_device, bool rumble_on)
 {
 	return input_device->ops->set_rumble(input_device->usrdata, rumble_on);
+}
+
+int input_device_get_num_wiimotes(input_device_t *input_device)
+{
+	return input_device->num_of_wiimotes;
 }
 
 bool input_device_report_input(input_device_t *input_device)

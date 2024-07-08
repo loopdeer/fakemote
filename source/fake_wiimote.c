@@ -239,6 +239,8 @@ static inline void fake_wiimote_reset_extension_state(fake_wiimote_t *wiimote)
 
 void fake_wiimote_init_state(fake_wiimote_t *wiimote, input_device_t *input_device)
 {
+	int num_of_wiimotes = input_device_get_num_wiimotes(input_device);
+	wiimote->is_anchor = num_of_wiimotes == 1;
 	wiimote->baseband_state = BASEBAND_STATE_REQUEST_CONNECTION;
 	wiimote->acl_state = L2CAP_CHANNEL_STATE_INACTIVE;
 	wiimote->psm_sdp_chn.valid = false;
@@ -312,7 +314,7 @@ int fake_wiimote_disconnect(fake_wiimote_t *wiimote)
 	wiimote->active = false;
 
 	/* Unassign the currently assigned input device (if any) */
-	if (wiimote->input_device)
+	if (wiimote->input_device && wiimote->is_anchor)
 		input_device_release_wiimote(wiimote->input_device);
 
 	/* Does a real Wiimote gracefully disconnect l2cap channels first?
@@ -723,7 +725,9 @@ void fake_wiimote_tick(fake_wiimote_t *wiimote)
 				   l2cap_channel_is_complete(&wiimote->psm_hid_intr_chn)) {
 				wiimote->acl_state = ACL_STATE_INACTIVE;
 				/* Call resume() input device callback */
-				input_device_resume(wiimote->input_device);
+				// Only call resume() for anchor wiimotes TODO: Properly handle this
+				if (!wiimote->is_anchor)
+					input_device_resume(wiimote->input_device);
 				return;
 			}
 			/* Send configuration for any newly connected channels. */

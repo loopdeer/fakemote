@@ -277,7 +277,9 @@ static int usb_device_ops_resume(void *usrdata, fake_wiimote_t *wiimotes[])
 	}
 
 	/* Store assigned fake Wiimote */
-	*device->wiimotes = *wiimotes;
+	for (int i = 0; i < MAX_FAKE_WIIMOTES; i++){
+		device->wiimotes[i] = wiimotes[i];
+	}
 
 	if (device->driver->init)
 		return device->driver->init(device, device->vid, device->pid);
