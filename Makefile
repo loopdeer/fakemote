@@ -17,7 +17,7 @@ FAKEMOTE_HASH	=	"$(shell git describe --dirty --always --exclude '*')"
 
 # Flags
 ARCH	=	-mcpu=arm926ej-s -mthumb -mthumb-interwork -mbig-endian
-CFLAGS	=	$(ARCH) -Iinclude -Icios-lib -fomit-frame-pointer -O2 -g3 \
+CFLAGS	=	$(ARCH) -Iinclude -Icios-lib -fomit-frame-pointer -O1 -g3 \
 		-ffreestanding -fno-builtin -Wall -Wstrict-prototypes -ffunction-sections \
 		-DFAKEMOTE_MAJOR=$(FAKEMOTE_MAJOR) -DFAKEMOTE_MINOR=$(FAKEMOTE_MINOR) \
 		-DFAKEMOTE_PATCH=$(FAKEMOTE_PATCH) -DFAKEMOTE_HASH=\"$(FAKEMOTE_HASH)\" \
